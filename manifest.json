@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Claude Free Token Meter",
+  "short_name": "CFTM",
+  "version": "1.0.0",
+  "description": "Estimación local del contexto y saldo de la ventana gratuita de Claude, con ayuda para ahorrar. Sin red ni telemetría.",
+  "minimum_chrome_version": "102",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://claude.ai/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

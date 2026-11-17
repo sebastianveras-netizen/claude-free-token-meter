@@ -1,0 +1,817 @@
+/* ==========================================================================
+   claude-free-token-meter · styles.css
+
+   Reglas de este archivo:
+   - Todas las clases usan el prefijo cftm-.
+   - Todos los selectores cuelgan de #cftm-root para ganar en especificidad
+     a los estilos de la página (claude.ai usa un reset global agresivo).
+   - Nada de estilos en línea escritos como texto: el JavaScript solo
+     modifica propiedades personalizadas (--cftm-w, --cftm-range-start,
+     --cftm-range-end) y la posición del widget mediante el CSSOM.
+   - Sin recursos remotos: ni fuentes, ni imágenes, ni @import.
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. Raíz y temas
+   -------------------------------------------------------------------------- */
+
+#cftm-root {
+  all: initial;
+
+  /* Tema claro (valor por defecto) */
+  --cftm-bg: #ffffff;
+  --cftm-surface: #f3f5f8;
+  --cftm-surface-2: #e9edf3;
+  --cftm-border: #d9dee7;
+  --cftm-text: #18212f;
+  --cftm-muted: #5a6578;
+  --cftm-accent: #2748d6;
+  --cftm-accent-contrast: #ffffff;
+  --cftm-track: #e3e8f0;
+  --cftm-good: #178a5c;
+  --cftm-fair: #5f8a1c;
+  --cftm-warn: #b86e00;
+  --cftm-danger: #c53a32;
+  --cftm-shadow: 0 10px 30px rgba(24, 33, 47, 0.18), 0 1px 3px rgba(24, 33, 47, 0.14);
+
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483000;
+  display: block;
+  max-width: calc(100vw - 16px);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--cftm-text);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+#cftm-root[data-cftm-theme="light"] {
+  --cftm-bg: #ffffff;
+  --cftm-surface: #f3f5f8;
+  --cftm-surface-2: #e9edf3;
+  --cftm-border: #d9dee7;
+  --cftm-text: #18212f;
+  --cftm-muted: #5a6578;
+  --cftm-accent: #2748d6;
+  --cftm-accent-contrast: #ffffff;
+  --cftm-track: #e3e8f0;
+  --cftm-good: #178a5c;
+  --cftm-fair: #5f8a1c;
+  --cftm-warn: #b86e00;
+  --cftm-danger: #c53a32;
+  --cftm-shadow: 0 10px 30px rgba(24, 33, 47, 0.18), 0 1px 3px rgba(24, 33, 47, 0.14);
+}
+
+#cftm-root[data-cftm-theme="dark"] {
+  --cftm-bg: #151a23;
+  --cftm-surface: #1d2430;
+  --cftm-surface-2: #262e3c;
+  --cftm-border: #323c4d;
+  --cftm-text: #e7ebf2;
+  --cftm-muted: #9aa6ba;
+  --cftm-accent: #8aa2ff;
+  --cftm-accent-contrast: #0f1530;
+  --cftm-track: #2a3342;
+  --cftm-good: #43c08a;
+  --cftm-fair: #a3c85a;
+  --cftm-warn: #e8a33d;
+  --cftm-danger: #f0746c;
+  --cftm-shadow: 0 12px 34px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  #cftm-root[data-cftm-theme="auto"] {
+    --cftm-bg: #151a23;
+    --cftm-surface: #1d2430;
+    --cftm-surface-2: #262e3c;
+    --cftm-border: #323c4d;
+    --cftm-text: #e7ebf2;
+    --cftm-muted: #9aa6ba;
+    --cftm-accent: #8aa2ff;
+    --cftm-accent-contrast: #0f1530;
+    --cftm-track: #2a3342;
+    --cftm-good: #43c08a;
+    --cftm-fair: #a3c85a;
+    --cftm-warn: #e8a33d;
+    --cftm-danger: #f0746c;
+    --cftm-shadow: 0 12px 34px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Reset local: neutraliza el reset global de la página dentro del widget. */
+#cftm-root *,
+#cftm-root *::before,
+#cftm-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  border: 0 solid transparent;
+}
+
+/* El atributo hidden debe ganar siempre a cualquier display declarado abajo. */
+#cftm-root [hidden] {
+  display: none !important;
+}
+
+#cftm-root .cftm-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. Contenedor principal, estados de colapso y modo
+   -------------------------------------------------------------------------- */
+
+#cftm-root .cftm-widget {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 288px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 32px);
+  background: var(--cftm-bg);
+  color: var(--cftm-text);
+  border: 1px solid var(--cftm-border);
+  border-radius: 14px;
+  box-shadow: var(--cftm-shadow);
+  overflow: hidden;
+}
+
+#cftm-root[data-cftm-mode="expanded"] .cftm-widget {
+  width: 368px;
+}
+
+#cftm-root[data-cftm-collapsed="true"] .cftm-widget {
+  display: none;
+}
+
+#cftm-root[data-cftm-collapsed="true"] .cftm-fab {
+  display: inline-flex;
+}
+
+#cftm-root.cftm-dragging {
+  cursor: grabbing;
+}
+
+#cftm-root.cftm-dragging * {
+  user-select: none;
+  -webkit-user-select: none;
+  transition: none !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   3. Cabecera (zona de arrastre) y botones de icono
+   -------------------------------------------------------------------------- */
+
+#cftm-root .cftm-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 12px;
+  border-bottom: 1px solid var(--cftm-border);
+  background: var(--cftm-bg);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+#cftm-root .cftm-heading {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#cftm-root .cftm-title {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#cftm-root .cftm-subtitle {
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--cftm-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#cftm-root .cftm-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+#cftm-root .cftm-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cftm-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+#cftm-root .cftm-icon-btn:hover {
+  background: var(--cftm-surface);
+  color: var(--cftm-text);
+}
+
+
+/* --------------------------------------------------------------------------
+   4. Cuerpo, indicadores principales y calibre
+   -------------------------------------------------------------------------- */
+
+#cftm-root .cftm-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cftm-border) transparent;
+}
+
+#cftm-root .cftm-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+#cftm-root .cftm-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--cftm-surface);
+}
+
+#cftm-root .cftm-kpi-label {
+  font-size: 10.5px;
+  color: var(--cftm-muted);
+}
+
+#cftm-root .cftm-kpi-value {
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#cftm-root .cftm-kpi-sub {
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--cftm-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Calibre: consumo de la ventana frente al presupuesto efectivo.
+   La banda translúcida muestra el rango donde podría estar el consumo real
+   según la incertidumbre del presupuesto. */
+#cftm-root .cftm-gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#cftm-root .cftm-gauge {
+  --cftm-gauge-color: var(--cftm-accent);
+  position: relative;
+  height: 10px;
+  border-radius: 6px;
+  background: var(--cftm-track);
+  overflow: hidden;
+}
+
+#cftm-root .cftm-gauge.cftm-gauge-ok {
+  --cftm-gauge-color: var(--cftm-good);
+}
+
+#cftm-root .cftm-gauge.cftm-gauge-warn {
+  --cftm-gauge-color: var(--cftm-warn);
+}
+
+#cftm-root .cftm-gauge.cftm-gauge-danger {
+  --cftm-gauge-color: var(--cftm-danger);
+}
+
+#cftm-root .cftm-gauge-range {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--cftm-range-start, 0%);
+  width: calc(var(--cftm-range-end, 0%) - var(--cftm-range-start, 0%));
+  background: var(--cftm-gauge-color);
+  opacity: 0.35;
+}
+
+#cftm-root .cftm-gauge-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--cftm-w, 0%);
+  background: var(--cftm-gauge-color);
+  border-radius: 6px 0 0 6px;
+  transition: width 0.3s ease;
+}
+
+#cftm-root .cftm-gauge-ticks {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(10% - 1px),
+    var(--cftm-bg) calc(10% - 1px),
+    var(--cftm-bg) 10%
+  );
+}
+
+#cftm-root .cftm-gauge-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10.5px;
+  color: var(--cftm-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* --------------------------------------------------------------------------
+   5. Tonos semánticos (salud, confianza, estados)
+   -------------------------------------------------------------------------- */
+
+#cftm-root .cftm-tone-good {
+  color: var(--cftm-good);
+}
+
+#cftm-root .cftm-tone-fair {
+  color: var(--cftm-fair);
+}
+
+#cftm-root .cftm-tone-warn {
+  color: var(--cftm-warn);
+}
+
+#cftm-root .cftm-tone-danger {
+  color: var(--cftm-danger);
+}
+
+#cftm-root .cftm-tone-muted {
+  color: var(--cftm-muted);
+}
+
+
+/* --------------------------------------------------------------------------
+   6. Vista expandida: secciones, filas y desglose por fuente
+   -------------------------------------------------------------------------- */
+
+#cftm-root .cftm-expanded {
+  display: none;
+}
+
+#cftm-root[data-cftm-mode="expanded"] .cftm-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#cftm-root .cftm-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--cftm-border);
+}
+
+#cftm-root .cftm-section-title {
+  font-size: 12px;
+  font-weight: 650;
+}
+
+#cftm-root .cftm-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#cftm-root .cftm-row-label {
+  color: var(--cftm-muted);
+}
+
+#cftm-root .cftm-row-value {
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#cftm-root .cftm-source {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#cftm-root .cftm-source-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#cftm-root .cftm-source-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#cftm-root .cftm-source-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#cftm-root .cftm-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--cftm-track);
+  overflow: hidden;
+}
+
+#cftm-root .cftm-bar-fill {
+  height: 100%;
+  width: var(--cftm-w, 0%);
+  border-radius: inherit;
+  background: var(--cftm-accent);
+  transition: width 0.25s ease;
+}
+
+#cftm-root .cftm-source-top .cftm-bar-fill {
+  background: var(--cftm-warn);
+}
+
+#cftm-root .cftm-badge {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+  white-space: nowrap;
+}
+
+#cftm-root .cftm-badge-alta {
+  color: var(--cftm-good);
+}
+
+#cftm-root .cftm-badge-media {
+  color: var(--cftm-accent);
+}
+
+#cftm-root .cftm-badge-baja {
+  color: var(--cftm-warn);
+}
+
+#cftm-root .cftm-badge-muy_baja {
+  color: var(--cftm-danger);
+}
+
+#cftm-root .cftm-help {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--cftm-muted);
+}
+
+
+/* --------------------------------------------------------------------------
+   7. Formularios y botones
+   -------------------------------------------------------------------------- */
+
+#cftm-root .cftm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#cftm-root .cftm-label {
+  font-size: 11px;
+  color: var(--cftm-muted);
+}
+
+#cftm-root .cftm-input,
+#cftm-root .cftm-select {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--cftm-border);
+  border-radius: 8px;
+  background: var(--cftm-bg);
+  color: var(--cftm-text);
+  font-variant-numeric: tabular-nums;
+  appearance: auto;
+}
+
+#cftm-root .cftm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#cftm-root .cftm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--cftm-border);
+  border-radius: 8px;
+  background: var(--cftm-surface);
+  color: var(--cftm-text);
+  font-weight: 550;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#cftm-root .cftm-btn:hover {
+  background: var(--cftm-surface-2);
+}
+
+#cftm-root .cftm-btn-primary {
+  border-color: transparent;
+  background: var(--cftm-accent);
+  color: var(--cftm-accent-contrast);
+}
+
+#cftm-root .cftm-btn-primary:hover {
+  background: var(--cftm-accent);
+  filter: brightness(1.08);
+}
+
+#cftm-root .cftm-btn-danger {
+  border-color: currentColor;
+  background: transparent;
+  color: var(--cftm-danger);
+}
+
+#cftm-root .cftm-btn-danger:hover {
+  background: var(--cftm-surface);
+}
+
+#cftm-root .cftm-btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--cftm-muted);
+}
+
+#cftm-root .cftm-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#cftm-root .cftm-btn-block {
+  flex: 1 1 100%;
+}
+
+
+/* --------------------------------------------------------------------------
+   8. Panel de recomendaciones de ahorro
+   -------------------------------------------------------------------------- */
+
+#cftm-root .cftm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--cftm-border);
+  border-radius: 10px;
+  background: var(--cftm-surface);
+}
+
+#cftm-root .cftm-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#cftm-root .cftm-panel-title {
+  font-weight: 650;
+}
+
+#cftm-root .cftm-panel-total {
+  font-weight: 650;
+  color: var(--cftm-good);
+  font-variant-numeric: tabular-nums;
+}
+
+#cftm-root .cftm-reco {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 0;
+  border-top: 1px solid var(--cftm-border);
+}
+
+#cftm-root .cftm-reco-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#cftm-root .cftm-reco-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+}
+
+#cftm-root .cftm-reco-text {
+  color: var(--cftm-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+#cftm-root .cftm-reco-saving {
+  font-weight: 600;
+  color: var(--cftm-good);
+  font-variant-numeric: tabular-nums;
+}
+
+#cftm-root .cftm-impact {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+  white-space: nowrap;
+}
+
+#cftm-root .cftm-impact-alto {
+  color: var(--cftm-danger);
+}
+
+#cftm-root .cftm-impact-medio {
+  color: var(--cftm-warn);
+}
+
+#cftm-root .cftm-impact-bajo {
+  color: var(--cftm-muted);
+}
+
+
+/* --------------------------------------------------------------------------
+   9. Avisos y mensajes temporales
+   -------------------------------------------------------------------------- */
+
+#cftm-root .cftm-note {
+  padding: 6px 8px;
+  border-left: 3px solid var(--cftm-warn);
+  border-radius: 4px;
+  background: var(--cftm-surface);
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--cftm-muted);
+}
+
+#cftm-root .cftm-note-info {
+  border-left-color: var(--cftm-accent);
+}
+
+#cftm-root .cftm-toast {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--cftm-text);
+  color: var(--cftm-bg);
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#cftm-root .cftm-toast.cftm-toast-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+/* --------------------------------------------------------------------------
+   10. Botón flotante del modo colapsado
+   -------------------------------------------------------------------------- */
+
+#cftm-root .cftm-fab {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--cftm-border);
+  border-radius: 999px;
+  background: var(--cftm-bg);
+  color: var(--cftm-text);
+  box-shadow: var(--cftm-shadow);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#cftm-root .cftm-fab-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+
+/* --------------------------------------------------------------------------
+   11. Accesibilidad: foco visible y reducción de movimiento
+   -------------------------------------------------------------------------- */
+
+#cftm-root .cftm-icon-btn:focus-visible,
+#cftm-root .cftm-btn:focus-visible,
+#cftm-root .cftm-fab:focus-visible,
+#cftm-root .cftm-input:focus-visible,
+#cftm-root .cftm-select:focus-visible {
+  outline: 2px solid var(--cftm-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #cftm-root *,
+  #cftm-root *::before,
+  #cftm-root *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   12. Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  #cftm-root {
+    right: 8px;
+    bottom: 8px;
+  }
+
+  #cftm-root .cftm-widget,
+  #cftm-root[data-cftm-mode="expanded"] .cftm-widget {
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+  }
+
+  #cftm-root .cftm-kpi-value {
+    font-size: 16px;
+  }
+}
+
+@media (max-height: 520px) {
+  #cftm-root .cftm-widget {
+    max-height: calc(100vh - 16px);
+  }
+}
